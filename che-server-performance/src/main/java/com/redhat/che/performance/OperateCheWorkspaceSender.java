@@ -20,6 +20,9 @@
  ******************************************************************************/
 package com.redhat.che.performance;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -58,10 +61,24 @@ public class OperateCheWorkspaceSender extends AbstractSender {
 	private String cheStarterUrl;
 	
 	private String token;
+	
+	private String propetiesFile;
+	
+	private static int threadCounter=0;
+	private int currentThread;
 
 	
 	public String getToken() {
 		return token;
+	}
+	
+	public OperateCheWorkspaceSender setPropertiesFile(final String propertiesFile) {
+		this.propetiesFile = propertiesFile;
+		return this;
+	}
+	
+	public String getPropertiesFile() {
+		return propetiesFile;
 	}
 	
 	public OperateCheWorkspaceSender setToken(String token) {
@@ -89,12 +106,31 @@ public class OperateCheWorkspaceSender extends AbstractSender {
 	 */
 	@Override
 	public void doInit(Properties messageAttributes) throws PerfCakeException {
-		log.info("Initializing");
+		currentThread = threadCounter++;
+		try {
+			log.info(new File(".").getAbsolutePath());
+			token = loadToken();
+		} catch (IOException e) {
+			throw new PerfCakeException("Unable to initialize properties file", e);
+		}
+		
 		final String targetUrl = safeGetTarget(messageAttributes);
 		if (log.isDebugEnabled()) {
 			log.debug("Setting target URL to: " + targetUrl);
 		}
 		cheStarterUrl = targetUrl;
+	}
+
+	/**
+	 * @return
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
+	 */
+	private String loadToken() throws FileNotFoundException, IOException {
+		log.info(propetiesFile);
+		Properties properties = new Properties();
+		properties.load(new FileInputStream(new File(propetiesFile).getAbsolutePath()));
+		return (String) properties.get("user"+currentThread);
 	}
 
 	/*
@@ -168,7 +204,6 @@ public class OperateCheWorkspaceSender extends AbstractSender {
 		getWorkspacesConnection.connect();
 
 		String workspaceStatus = getWorkspaceStatus(workspaceId, getWorkspacesConnection);
-		log.info(workspaceStatus);
 		boolean alreadyStarting = false;
 
 		while (!workspaceStatus.equals("RUNNING")) {
@@ -185,7 +220,7 @@ public class OperateCheWorkspaceSender extends AbstractSender {
 			getWorkspacesConnection = createGetWorkspaceConnection();
 			getWorkspacesConnection.connect();
 			workspaceStatus = getWorkspaceStatus(workspaceId, getWorkspacesConnection);
-			log.info(workspaceStatus);
+			Thread.sleep(1000);
 		}
 		return "";
 	}

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <scenario xmlns="urn:perfcake:scenario:7.0">
-	<run type="iteration" value="1" />
-	<generator class="ConstantSpeedMessageGenerator" threads="1">
+	<run type="iteration" value="2" />
+	<generator class="ConstantSpeedMessageGenerator" threads="2">
 		<property name="speed" value="150" />
 		<property name="shutdownPeriod" value="600000" />
 	</generator>
 	<sender class="com.redhat.che.performance.OperateCheWorkspaceSender">
            <target>${cheStarterHost}</target>
-            <property name="token" value="${token}" />
+            <property name="propertiesFile" value="src/test/resources/users.properties" />
 	</sender>
 	<reporting>
 		<reporter class="ResponseTimeStatsReporter">
